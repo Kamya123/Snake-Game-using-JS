@@ -6,11 +6,24 @@ var context;
 
 //Drawing snake head
 var snakeX = blockSize * 5;
-var snakeY = blockSize * 5;
+var snakeY = blockSize * 15;
+
+//snakeBody updation
+var snakeBody = [];
+
+//Velocity of Snake
+var velocityX = 0;
+var velocityY = 0;
 
 //Drawing food;
 var foodX;
 var foodY;
+
+//gameOver
+var gameOver = false;
+
+const foodSound = new Audio('music/food.mp3');
+const gameOverSound = new Audio('music/gameover.mp3');
 
 window.onload = function() {
     board = document.getElementById("board");
@@ -19,20 +32,78 @@ window.onload = function() {
     context = board.getContext("2d"); //used to draw on a board
 
     placeFood();
-    update();
+    document.addEventListener("keyup", changeDirection);
+    setInterval(update, 1000/10);
 }
 
 function update() {
+    if (gameOver) {
+        return;
+    }
+
     context.fillStyle = "black";
     context.fillRect(0, 0, board.width, board.height);
-
-    //head color
-    context.fillStyle = "lime";
-    context.fillRect(snakeX, snakeY, blockSize, blockSize);
 
     //food color
     context.fillStyle = "red";
     context.fillRect(foodX, foodY, blockSize, blockSize);
+
+    //placing food when snake consumes one food
+    if (snakeX == foodX && snakeY == foodY) {
+        foodSound.play();
+        snakeBody.push([foodX, foodY]);
+        placeFood();
+    }
+
+    //updating the length of the snake with the movement of the head
+    for(let i=snakeBody.length-1; i>0; i--) {
+        snakeBody[i] = snakeBody[i-1];
+    }
+    if (snakeBody.length) {
+        snakeBody[0] = [snakeX, snakeY];
+    }
+
+    //head color
+    context.fillStyle = "lime";
+    snakeX += velocityX * blockSize;
+    snakeY += velocityY * blockSize;
+    context.fillRect(snakeX, snakeY, blockSize, blockSize);
+    for(let i=0; i<snakeBody.length; i++) {
+        context.fillRect(snakeBody[i][0], snakeBody[i][1], blockSize, blockSize);
+    }
+
+    //gameOver condition
+    if (snakeX < 0 || snakeX > cols*blockSize || snakeY < 0 || snakeY > rows.blockSize) {
+        gameOver = true;
+        gameOverSound.play();
+        alert("Game Over");
+    }
+    for (let i = 0; i < snakeBody.length; i++) {
+        if (snakeX == snakeBody[i][0] && snakeY == snakeBody[i][1]) {
+            gameOver = true;
+            gameOverSound.play();
+            alert("Game Over");
+        }
+    }
+}
+
+function changeDirection(e) {
+    if (e.code == "ArrowUp" && velocityY != 1) {
+        velocityX = 0;
+        velocityY = -1;
+    }
+    else if (e.code == "ArrowDown" && velocityY != -1) {
+        velocityX = 0;
+        velocityY = 1;
+    }
+    else if (e.code == "ArrowLeft" && velocityX != 1) {
+        velocityX = -1;
+        velocityY = 0;
+    }
+    else if (e.code == "ArrowRight" && velocityX != -1) {
+        velocityX = 1;
+        velocityY = 0;
+    }
 }
 
 function placeFood() {
